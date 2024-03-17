@@ -11,8 +11,6 @@ $conn = mysqli_connect($sname, $uname, $password, $db_name);
     }else{
         "Connection Success!";
     }
-
-
 ?>
 
 

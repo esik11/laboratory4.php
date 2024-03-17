@@ -10,20 +10,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         return $data;
     }
 
-    $username = validate($_POST['username']);
     $email = validate($_POST['email']);
     $password = validate($_POST['password']);
 
-    if (empty($username) || empty($email) || empty($password)) {
+    if (empty($email) || empty($password)) {
         header("Location: index.php?error=All fields are required");
         exit();
     } else {
         // Perform additional validation as needed
         // Example: check if the email format is valid
+        // Check if the user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            // Query the database to retrieve the user information based on the email and password provided by the user
+            $query = "SELECT * FROM user_profile WHERE email = '$email' AND password = '$password'";
+            $result = mysqli_query($conn, $query);
 
-        // Redirect to index.php if inputs are valid
-        header("Location: index.php");
-        exit();
+            if (mysqli_num_rows($result) == 1) {
+                // Set the session variable and redirect to index.php
+                $row = mysqli_fetch_assoc($result);
+                $_SESSION['user_id'] = $row['user_id'];
+                header("Location: index.php");
+                exit();
+            } else {
+                header("Location: index.php?error=Incorrect email or password");
+                exit();
+            }
+        }
     }
 }
 ?>

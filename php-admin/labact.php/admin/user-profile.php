@@ -1,21 +1,32 @@
 <?php
-include('includes/header.php'); 
-include('includes/topbar.php'); 
-include('includes/sidebar.php'); 
+session_start();
+include('includes/header.php');
+include('includes/topbar.php');
+include('includes/sidebar.php');
 include('includes/db-conn.php');
+// Assuming you have stored the logged-in user's user_id in a session variable named 'user_id'
+if (isset($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
 
+    $query = "SELECT full_name, email, password, firstname, middlename, lastname, address, phone_number, profile_pic FROM user_profile WHERE user_id = $user_id";
 
+    $result = mysqli_query($conn, $query);
 
-$query = "SELECT full_name, email, password, firstname, middlename, lastname, address, phone_number, profile_pic FROM user_profile WHERE user_id = 12"; // Assuming user_id 1 is the logged-in user
-
-$result = mysqli_query($conn, $query);
-
-$user = mysqli_fetch_assoc($result);
-
-    
-
-
+    if ($result && mysqli_num_rows($result) > 0) {
+        $user = mysqli_fetch_assoc($result);
+    } else {
+        // Handle error if no user found with the given user_id
+        // For instance, redirect the user to a login page or display an error message
+    }
+} else {
+    // Handle the case where the user is not logged in
+    // For instance, redirect the user to a login page
+    header("Location: login.php");
+    exit();
+}
 ?>
+
+
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
@@ -83,7 +94,7 @@ $user = mysqli_fetch_assoc($result);
                 <p class="text-muted">
                   B.S. in Computer Science from the University of Tennessee at Knoxville
                 </p>
-
+ 
                 <hr>
 
                 <strong><i class="fas fa-map-marker-alt mr-1"></i> Location</strong>
@@ -124,26 +135,28 @@ $user = mysqli_fetch_assoc($result);
                 </ul>
               </div><!-- /.card-header -->
               <div class="card-body">
-                <div class="tab-content">
-                  <div class="active tab-pane" id="activity">
-                    <div class="post">
-                      <div class="user-block">
-                        <span class="username">
-                          <a href="#">Full Name: </a>
-                        </span>
-                        <span class="description"><?php echo $user['full_name']; ?></span>
-                      </div>
-                      <!-- /.user-block -->
-                      <p>Email: <?php echo $user['email']; ?></p>
-                      <p>Password: <?php echo $user['password']; ?></p>
-                      <p>First Name: <?php echo $user['firstname']; ?></p>
-                      <p>Middle Name: <?php echo $user['middlename']; ?></p>
-                      <p>Last Name: <?php echo $user['lastname']; ?></p>
-                      <p>Address: <?php echo $user['address']; ?></p>
-                      <p>Phone Number: <?php echo $user['phone_number']; ?></p>
+              <div class="tab-content">
+                <div class="active tab-pane" id="activity">
+                  <div class="post">
+                    <div class="user-block">
+                      <span class="username">
+                        <a href="#">Full Name: </a>
+                      </span>
+                      <span class="description"><?php echo $user['full_name']; ?></span>
                     </div>
-                  </div>
+                    <!-- /.user-block -->
+                    <p>Email: <?php echo $user['email']; ?></p>
+                    <p>Password: <?php echo $user['password']; ?></p>
+                    <p>First Name: <?php echo $user['firstname']; ?></p>
+                    <p>Middle Name: <?php echo $user['middlename']; ?></p>
+                    <p>Last Name: <?php echo $user['lastname']; ?></p>
+                    <p>Address: <?php echo $user['address']; ?></p>
+                    <p>Phone Number: <?php echo $user['phone_number']; ?></p>           
+                    <a href='users-edit.php?id=<?php echo $user_id; ?>' class='btn btn-success btn-sm'>Edit</a>
+
+                    <a href="../../labact.php/admin/logout.php" class="d-block">Logout</a>                
                 </div>
+              </div>
               </div><!-- /.card-body -->
             </div><!-- /.card -->
           </div><!-- /.col -->

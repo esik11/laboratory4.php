@@ -1,7 +1,25 @@
 <?php
-include('includes/header.php'); 
-include('includes/topbar.php'); 
-include('includes/sidebar.php'); 
+session_start();
+include('includes/db-conn.php');
+
+// Connect to the database
+$conn = mysqli_connect($sname, $uname, $password, $db_name);
+
+// Check if the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Get the user information from the database
+$user_id = $_SESSION['user_id'];
+$query = "SELECT * FROM user_profile WHERE user_id = $user_id";
+$result = mysqli_query($conn, $query);
+$user = mysqli_fetch_assoc($result);
+
+include('includes/header.php');
+include('includes/topbar.php');
+include('includes/sidebar.php');
 ?>
 <div class="wrapper">
 
@@ -18,6 +36,14 @@ include('includes/sidebar.php');
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
               <li class="breadcrumb-item active">Dashboard v1</li>
+
+              <div class="image">
+    <img src="assets/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image">
+  </div>
+  <div class="info">
+  <button type="button" class="btn btn-primary" onclick="location.href='user-profile.php';">User Profile</button>       
+  </i></a>
+  </div>
             </ol>
           </div><!-- /.col -->
         </div><!-- /.row -->
@@ -71,7 +97,7 @@ include('includes/sidebar.php');
               <div class="icon">
                 <i class="ion ion-person-add"></i>
               </div>
-              <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+              <a href="user-profile.php" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
             </div>
           </div>
           <!-- ./col -->
@@ -86,14 +112,6 @@ include('includes/sidebar.php');
               <div class="icon">
                 <i class="ion ion-pie-graph"></i>
               </div>
-              <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
-          </div>
-          <!-- ./col -->
-        </div>
-        <!-- /.row -->
-
-
-<?php
-    include('includes/footer.php');
+   <?php
+  include('includes/footer.php');
 ?>
