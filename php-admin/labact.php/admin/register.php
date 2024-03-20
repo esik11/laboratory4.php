@@ -1,9 +1,13 @@
-<?php
+<<?php
+// Start session to manage user data
 session_start();
+
+// Include database connection script
 include('includes/db-conn.php');
 
+// Check if the form is submitted via POST method
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Function to validate and sanitize input
+    // Function to validate and sanitize input data
     function validate($data) {
         $data = trim($data);
         $data = stripslashes($data);
@@ -12,18 +16,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Validate and sanitize form inputs
-    $full_name = validate($_POST['full_name']);
-    $email = validate($_POST['email']);
-    $password = validate($_POST['password']);
-    $address = validate($_POST['address']);
-    $phone_number = validate($_POST['phone_number']);
-    $firstname = validate($_POST['firstname']);
-    $middlename = validate($_POST['middlename']);
-    $lastname = validate($_POST['lastname']);
+    $full_name = validate($_POST['full_name']); // Full name
+    $email = validate($_POST['email']); // Email
+    $password = validate($_POST['password']); // Password
+    $address = validate($_POST['address']); // Address
+    $phone_number = validate($_POST['phone_number']); // Phone number
+    $firstname = validate($_POST['firstname']); // First name
+    $middlename = validate($_POST['middlename']); // Middle name
+    $lastname = validate($_POST['lastname']); // Last name
 
+    // Check file upload for profile picture
     $allowedExts = array("jpg", "jpeg", "gif", "png");
     $file_parts = explode(".", $_FILES["profile_pic"]["name"]);
-        $extension = end($file_parts);
+    $extension = end($file_parts);
     if ((($_FILES["profile_pic"]["type"] == "image/gif")
         || ($_FILES["profile_pic"]["type"] == "image/jpeg")
         || ($_FILES["profile_pic"]["type"] == "image/png")
@@ -31,26 +36,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         && ($_FILES["profile_pic"]["size"] < 500000)
         && in_array($extension, $allowedExts)) {
         if ($_FILES["profile_pic"]["error"] > 0) {
-            echo "Error: " . $_FILES["profile_pic"]["error"] . "<br>";
+            echo "Error: " . $_FILES["profile_pic"]["error"] . "<br>"; // Error handling for file upload
         } else {
             $target_dir = "uploads/";
-            $target_file = $target_dir . basename($_FILES["profile_pic"]["name"]);
+            $target_file = $target_dir . basename($_FILES["profile_pic"]["name"]); // Upload profile picture
             if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
-                echo "The file " . basename($_FILES["profile_pic"]["name"]) . " has been uploaded.";
+                echo "The file " . basename($_FILES["profile_pic"]["name"]) . " has been uploaded."; // Successful file upload message
             } else {
-                echo "Sorry, there was an error uploading your file.";
+                echo "Sorry, there was an error uploading your file."; // Error message for file upload failure
             }
         }
     } else {
-        echo "Invalid file";
+        echo "Invalid file"; // Error message for invalid file type or size
     }
 
-    // Check if email already exists
+    // Check if email already exists in the database
     $email_check_query = "SELECT * FROM user_profile WHERE email='$email' LIMIT 1";
     $result = mysqli_query($conn, $email_check_query);
     $user = mysqli_fetch_assoc($result);
 
-    if ($user) { // If email exists
+    if ($user) { // If email exists, set error message
         if ($user['email'] === $email) {
             $_SESSION['error'] = "Email already exists";
         }
@@ -62,12 +67,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES ('$full_name', '$email', '$password', '$address', '$phone_number', '$target_file', '$firstname', '$middlename', '$lastname')";
 
         if (mysqli_query($conn, $sql)) {
-            $_SESSION['success'] = "New record created successfully";
+            $_SESSION['success'] = "New record created successfully"; // Success message for successful database insertion
         } else {
-            $_SESSION['error'] = "Error: " . $sql . "<br>" . mysqli_error($conn);
+            $_SESSION['error'] = "Error: " . $sql . "<br>" . mysqli_error($conn); // Error message for database insertion failure
         }
     }
 
+    // Close database connection
     mysqli_close($conn);
 }
 ?>

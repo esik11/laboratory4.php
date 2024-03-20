@@ -1,5 +1,8 @@
 <?php
+// Start session
 session_start();
+
+// Include database connection
 include('includes/db-conn.php');
 
 // Connect to the database
@@ -7,6 +10,7 @@ $conn = mysqli_connect($sname, $uname, $password, $db_name);
 
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
+    // Redirect to the login page if the user is not logged in
     header("Location: login.php");
     exit();
 }
@@ -17,10 +21,12 @@ $query = "SELECT * FROM user_profile WHERE user_id = $user_id";
 $result = mysqli_query($conn, $query);
 $user = mysqli_fetch_assoc($result);
 
+// Include header, topbar, and sidebar files
 include('includes/header.php');
 include('includes/topbar.php');
 include('includes/sidebar.php');
 ?>
+
 <div class="wrapper">
 
 <!-- Content Wrapper. Contains page content -->

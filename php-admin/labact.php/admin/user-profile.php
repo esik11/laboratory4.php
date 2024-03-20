@@ -1,21 +1,32 @@
 <?php
+// Start session to manage user data
 session_start();
+
+// Include header, topbar, and sidebar files for UI
 include('includes/header.php');
 include('includes/topbar.php');
 include('includes/sidebar.php');
+
+// Include database connection script
 include('includes/db-conn.php');
-// Assuming you have stored the logged-in user's user_id in a session variable named 'user_id'
+
+// Check if user is logged in
 if (isset($_SESSION['user_id'])) {
+    // Retrieve user ID from session
     $user_id = $_SESSION['user_id'];
 
+    // Query to fetch user data based on user ID
     $query = "SELECT full_name, email, password, firstname, middlename, lastname, address, phone_number, profile_pic FROM user_profile WHERE user_id = $user_id";
 
+    // Execute query
     $result = mysqli_query($conn, $query);
 
+    // Check if query is successful and user data is found
     if ($result && mysqli_num_rows($result) > 0) {
+        // Fetch user details
         $user = mysqli_fetch_assoc($result);
     } else {
-        // Handle error if no user found with the given user_id
+        // Handle error if no user found with the given user ID
         // For instance, redirect the user to a login page or display an error message
     }
 } else {
