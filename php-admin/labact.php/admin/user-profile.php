@@ -11,12 +11,12 @@ include('includes/sidebar.php');
 include('includes/db-conn.php');
 
 // Check if user is logged in
-if (isset($_SESSION['user_id'])) {
+if (isset($_SESSION['id'])) {
     // Retrieve user ID from session
-    $user_id = $_SESSION['user_id'];
+    $user_id = $_SESSION['id'];
 
     // Query to fetch user data based on user ID
-    $query = "SELECT full_name, email, password, firstname, middlename, lastname, address, phone_number, profile_pic FROM user_profile WHERE user_id = $user_id";
+    $query = "SELECT full_name, email, password, firstname, middlename, lastname, address, phone_number, profile_pic FROM user_profile WHERE id = $user_id";
 
     // Execute query
     $result = mysqli_query($conn, $query);

@@ -9,15 +9,15 @@ include('includes/db-conn.php');
 $conn = mysqli_connect($sname, $uname, $password, $db_name);
 
 // Check if the user is logged in
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['id'])) {
     // Redirect to the login page if the user is not logged in
     header("Location: login.php");
     exit();
 }
 
 // Get the user information from the database
-$user_id = $_SESSION['user_id'];
-$query = "SELECT * FROM user_profile WHERE user_id = $user_id";
+$user_id = $_SESSION['id'];
+$query = "SELECT * FROM user_profile WHERE id = $user_id";
 $result = mysqli_query($conn, $query);
 $user = mysqli_fetch_assoc($result);
 

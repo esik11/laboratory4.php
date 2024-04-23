@@ -26,16 +26,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     } else {
         // Check if the user is not already logged in
-        if (!isset($_SESSION['user_id'])) {
-                                                                                               
-        $query = "SELECT * FROM user_profile WHERE email = '$email' AND password = '$password'"; // Query the database to retrieve user information based on email and password
+        if (!isset($_SESSION['id'])) {
+            $query = "SELECT * FROM user_profile WHERE email = '$email' AND password = '$password'"; // Query the database to retrieve user information based on email and password
             $result = mysqli_query($conn, $query);
 
             // Check if exactly one user is found with the provided credentials
             if (mysqli_num_rows($result) == 1) {
                 // if correct input values it will go and Set the session variable for user ID and redirect to index.php
                 $row = mysqli_fetch_assoc($result);
-                $_SESSION['user_id'] = $row['user_id'];
+                $_SESSION['id'] = $row['id'];
                 header("Location: index.php");
                 exit();
             } else {
@@ -47,7 +46,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -91,13 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <?php echo $_GET['error']; ?>
                         </div>
                     <?php } ?>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" name="username" placeholder="Username">
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-user"></span>
-                            </div>
-                        </div>
+                    
                     </div>
                     <div class="input-group mb-3">
                         <input type="email" class="form-control" name="email" placeholder="Email">

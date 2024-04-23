@@ -1,4 +1,4 @@
-<<?php
+<?php
 // Start session to manage user data
 session_start();
 
@@ -26,18 +26,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $lastname = validate($_POST['lastname']); // Last name
 
     // Check file upload for profile picture
-    $allowedExts = array("jpg", "jpeg", "gif", "png");
-    $file_parts = explode(".", $_FILES["profile_pic"]["name"]);
-    $extension = end($file_parts);
-    if ((($_FILES["profile_pic"]["type"] == "image/gif")
-        || ($_FILES["profile_pic"]["type"] == "image/jpeg")
-        || ($_FILES["profile_pic"]["type"] == "image/png")
-        || ($_FILES["profile_pic"]["type"] == "image/pjpeg"))
-        && ($_FILES["profile_pic"]["size"] < 500000)
-        && in_array($extension, $allowedExts)) {
-        if ($_FILES["profile_pic"]["error"] > 0) {
-            echo "Error: " . $_FILES["profile_pic"]["error"] . "<br>"; // Error handling for file upload
-        } else {
+    if ($_FILES["profile_pic"]["error"] == 0) {
+        $allowedExts = array("jpg", "jpeg", "gif", "png");
+        $file_parts = explode(".", $_FILES["profile_pic"]["name"]);
+        $extension = end($file_parts);
+        if ((($_FILES["profile_pic"]["type"] == "image/gif")
+            || ($_FILES["profile_pic"]["type"] == "image/jpeg")
+            || ($_FILES["profile_pic"]["type"] == "image/png")
+            || ($_FILES["profile_pic"]["type"] == "image/pjpeg"))
+            && ($_FILES["profile_pic"]["size"] < 500000)
+            && in_array($extension, $allowedExts)) {
             $target_dir = "uploads/";
             $target_file = $target_dir . basename($_FILES["profile_pic"]["name"]); // Upload profile picture
             if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
@@ -45,9 +43,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 echo "Sorry, there was an error uploading your file."; // Error message for file upload failure
             }
+        } else {
+            echo "Invalid file"; // Error message for invalid file type or size
         }
-    } else {
-        echo "Invalid file"; // Error message for invalid file type or size
     }
 
     // Check if email already exists in the database
@@ -72,10 +70,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['error'] = "Error: " . $sql . "<br>" . mysqli_error($conn); // Error message for database insertion failure
         }
     }
-
-    // Close database connection
-    mysqli_close($conn);
 }
+
+// Retain input data in form fields
+$full_name = isset($_POST['full_name']) ? $_POST['full_name'] : '';
+$email = isset($_POST['email']) ? $_POST['email'] : '';
+$password = isset($_POST['password']) ? $_POST['password'] : '';
+$address = isset($_POST['address']) ? $_POST['address'] : '';
+$phone_number = isset($_POST['phone_number']) ? $_POST['phone_number'] : '';
+$firstname = isset($_POST['firstname']) ? $_POST['firstname'] : '';
+$middlename = isset($_POST['middlename']) ? $_POST['middlename'] : '';
+$lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
 ?>
 
 <!DOCTYPE html>
@@ -107,23 +112,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <form action="register.php" method="post" enctype="multipart/form-data">
                             <div class="form-group">
                                 <label for="full_name">Full Name/Username</label>
-                                <input type="text" id="full_name" name="full_name" class="form-control" required>
+                                <input type="text" id="full_name" name="full_name" class="form-control" value="<?php echo $full_name; ?>" required>
                             </div>
                             <div class="form-group">
                                 <label for="email">Email</label>
-                                <input type="email" id="email" name="email" class="form-control" required>
+                                <input type="email" id="email" name="email" class="form-control" value="<?php echo $email; ?>" required>
                             </div>
                             <div class="form-group">
                                 <label for="password">Password</label>
-                                <input type="password" id="password" name="password" class="form-control" required>
+                                <input type="password" id="password" name="password" class="form-control" value="<?php echo $password; ?>" required>
                             </div>
                             <div class="form-group">
                                 <label for="address">Address</label>
-                                <input type="text" id="address" name="address" class="form-control">
+                                <input type="text" id="address" name="address" class="form-control" value="<?php echo $address; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="phone_number">Phone Number</label>
-                                <input type="text" id="phone_number" name="phone_number" class="form-control">
+                                <input type="text" id="phone_number" name="phone_number" class="form-control" value="<?php echo $phone_number; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="profile_pic">Profile Picture</label>
@@ -131,19 +136,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <div class="form-group">
                                 <label for="firstname">First Name</label>
-                                <input type="text" id="firstname" name="firstname" class="form-control">
+                                <input type="text" id="firstname" name="firstname" class="form-control" value="<?php echo $firstname; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="middlename">Middle Name</label>
-                                <input type="text" id="middlename" name="middlename" class="form-control">
+                                <input type="text" id="middlename" name="middlename" class="form-control" value="<?php echo $middlename; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="lastname">Last Name</label>
-                                <input type="text" id="lastname" name="lastname" class="form-control">
+                                <input type="text" id="lastname" name="lastname" class="form-control" value="<?php echo $lastname; ?>">
                             </div>
                             <button type="submit" name="submit" class="btn btn-primary btn-block">Register</button>
                             <p class="mb-0">
                             <a href="login.php" class="text-center">Have account already? GO LOG IN</a>
                         </form>
                     </div>
-                </div
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
