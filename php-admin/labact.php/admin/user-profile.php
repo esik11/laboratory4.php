@@ -4,19 +4,20 @@ session_start();
 
 // Include header, topbar, and sidebar files for UI
 include('includes/header.php');
-include('includes/topbar.php');
-include('includes/sidebar.php');
+
+
 
 // Include database connection script
 include('includes/db-conn.php');
 
 // Check if user is logged in
-if (isset($_SESSION['id'])) {
+if (isset($_SESSION['user_id'])) {
     // Retrieve user ID from session
-    $user_id = $_SESSION['id'];
+    $user_id = $_SESSION['user_id'];
 
     // Query to fetch user data based on user ID
-    $query = "SELECT full_name, email, password, firstname, middlename, lastname, address, phone_number, profile_pic FROM user_profile WHERE id = $user_id";
+
+$query ="SELECT username, password, profile_pic, first_name, middle_name, last_name,  email  FROM users WHERE user_id= $user_id";
 
     // Execute query
     $result = mysqli_query($conn, $query);
@@ -36,26 +37,6 @@ if (isset($_SESSION['id'])) {
     exit();
 }
 ?>
-
-
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>Profile</h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">User Profile</li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
-
     <!-- Main content -->
     <section class="content">
       <div class="container-fluid">
@@ -71,13 +52,13 @@ if (isset($_SESSION['id'])) {
                        alt="User profile picture">
                 </div>
 
-                <h3 class="profile-username text-center"><?php echo $user['lastname']; ?></h3>
+                <h3 class="profile-username text-center"><?php echo $user['username']; ?></h3>
 
                 <p class="text-muted text-center">Software Engineer</p>
 
                 <ul class="list-group list-group-unbordered mb-3">
                   <li class="list-group-item">
-                    <b>Name:</b> <a class="float-right"><?php echo $user['firstname']; ?></a>
+                    <b>Name:</b> <a class="float-right"><?php echo $user['first_name']; ?></a>
                   </li>
                   <li class="list-group-item">
                     <b>Email:</b> <a class="float-right"><?php echo $user['email']; ?></a>
@@ -153,17 +134,17 @@ if (isset($_SESSION['id'])) {
                       <span class="username">
                         <a href="#">Full Name: </a>
                       </span>
-                      <span class="description"><?php echo $user['full_name']; ?></span>
+                      <span class="description"><?php echo $user['username']; ?></span>
                     </div>
                     <!-- /.user-block -->
                     <p>Email: <?php echo $user['email']; ?></p>
                     <p>Password: <?php echo $user['password']; ?></p>
-                    <p>First Name: <?php echo $user['firstname']; ?></p>
-                    <p>Middle Name: <?php echo $user['middlename']; ?></p>
-                    <p>Last Name: <?php echo $user['lastname']; ?></p>
-                    <p>Address: <?php echo $user['address']; ?></p>
-                    <p>Phone Number: <?php echo $user['phone_number']; ?></p>           
+                    <p>First Name: <?php echo $user['first_name']; ?></p>
+                    <p>Middle Name: <?php echo $user['middle_name']; ?></p>
+                    <p>Last Name: <?php echo $user['last_name']; ?></p>
+                    <p>Email: <?php echo $user['email']; ?></p>           
                     <a href='users-edit.php?id=<?php echo $user_id; ?>' class='btn btn-success btn-sm'>Edit</a>
+                    <a href="index.php" class='btn btn-success btn-sm'>Back</a>
 
                     <a href="../../labact.php/admin/logout.php" class="d-block">Logout</a>                
                 </div>

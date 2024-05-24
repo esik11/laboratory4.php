@@ -1,159 +1,420 @@
 <?php
-// Start session to manage user data
-session_start();
+session_start(); // Start the session to manage user data
 
-// Include database connection script
-include('includes/db-conn.php');
+include "includes/db-conn.php"; // Include the database connection file
 
-// Check if the form is submitted via POST method
+use PHPMailer\PHPMailer\PHPMailer; // Import PHPMailer class
+use PHPMailer\PHPMailer\SMTP; // Import PHPMailer SMTP class
+use PHPMailer\PHPMailer\Exception; // Import PHPMailer Exception class
+
+require 'vendor/autoload.php'; // Require autoload file to load PHPMailer library
+
+// Check if the request method is POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Function to validate and sanitize input data
-    function validate($data) {
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = htmlspecialchars($data);
-        return $data;
+    function validate($data)
+    {
+        $data = trim($data); // Remove whitespace from the beginning and end of the string
+        $data = stripslashes($data); // Remove backslashes (\)
+        $data = htmlspecialchars($data); // Convert special characters to HTML entities
+        return $data; // Return the sanitized data
     }
 
-    // Validate and sanitize form inputs
-    $full_name = validate($_POST['full_name']); // Full name
-    $email = validate($_POST['email']); // Email
-    $password = validate($_POST['password']); // Password
-    $address = validate($_POST['address']); // Address
-    $phone_number = validate($_POST['phone_number']); // Phone number
-    $firstname = validate($_POST['firstname']); // First name
-    $middlename = validate($_POST['middlename']); // Middle name
-    $lastname = validate($_POST['lastname']); // Last name
+    // Validate and sanitize input fields
+                $username = validate($_POST['username']);
+            $password = validate($_POST['password']);
+            $confirm_password = validate($_POST['confirm_password']);
+            $emailaddress = validate($_POST['emailaddress']);
+            $firstname = validate($_POST['firstname']);
+            $middlename = validate($_POST['middlename']);
+            $lastname = validate($_POST['lastname']);
+            $gmail_password = validate($_POST['gmail_password']);
 
-    // Check file upload for profile picture
-    if ($_FILES["profile_pic"]["error"] == 0) {
-        $allowedExts = array("jpg", "jpeg", "gif", "png");
-        $file_parts = explode(".", $_FILES["profile_pic"]["name"]);
-        $extension = end($file_parts);
-        if ((($_FILES["profile_pic"]["type"] == "image/gif")
-            || ($_FILES["profile_pic"]["type"] == "image/jpeg")
-            || ($_FILES["profile_pic"]["type"] == "image/png")
-            || ($_FILES["profile_pic"]["type"] == "image/pjpeg"))
-            && ($_FILES["profile_pic"]["size"] < 500000)
-            && in_array($extension, $allowedExts)) {
-            $target_dir = "uploads/";
-            $target_file = $target_dir . basename($_FILES["profile_pic"]["name"]); // Upload profile picture
-            if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
-                echo "The file " . basename($_FILES["profile_pic"]["name"]) . " has been uploaded."; // Successful file upload message
-            } else {
-                echo "Sorry, there was an error uploading your file."; // Error message for file upload failure
+            // Handle file upload
+            $profile_pic = '';
+            if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
+                $file_tmp_name = $_FILES['profile_pic']['tmp_name'];
+                $file_name = $_FILES['profile_pic']['name'];
+                $file_size = $_FILES['profile_pic']['size'];
+                $file_type = $_FILES['profile_pic']['type'];
+
+                // Validate file type and size
+                $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+                $max_size = 1048576; // 1MB
+
+                if (!in_array($file_type, $allowed_types) || $file_size > $max_size) {
+                    $_SESSION['status'] = "Invalid file type or size. Please upload a JPEG, PNG, or GIF image with a maximum size of 1MB.";
+                    header("Location: register.php");
+                    exit();
+                }
+
+                // Move the uploaded file to a permanent location
+                $upload_dir = 'uploads/';
+                $upload_file = $upload_dir . basename($file_name);
+                if (!move_uploaded_file($file_tmp_name, $upload_file)) {
+                    $_SESSION['status'] = "Error uploading file.";
+                    header("Location: register.php");
+                    exit();
+                }
+
+                // Store the file path in the database
+                $profile_pic = $upload_file;
             }
-        } else {
-            echo "Invalid file"; // Error message for invalid file type or size
+                // Checking if passwords match
+                if ($password !== $confirm_password) {
+                    $_SESSION['status'] = "Passwords do not match."; // Set session status message
+                    header("Location: signup.php"); // Redirect back to signup page
+                    exit(); // Terminate script execution
+                }
+  
+    // check if any field is empty
+    if (empty($username) || empty($password) || empty($confirm_password) || empty($emailaddress) || empty($firstname) || empty($middlename) || empty($lastname) || empty($gmail_password)) {
+        $_SESSION['status'] = "All fields are required."; // Set session status message
+        $_SESSION['username'] = $username;
+        $_SESSION['emailaddress'] = $emailaddress;
+        $_SESSION['firstname'] = $firstname;
+        $_SESSION['middlename'] = $middlename;
+        $_SESSION['lastname'] = $lastname;
+        header("Location: register.php"); //redirect back to register page
+        exit(); //terminate script execution
+    } elseif ($password !== $confirm_password) { //check again for passwords match
+        $_SESSION['status'] = "Passwords do not match."; //set session status message
+        $_SESSION['username'] = $username;
+        $_SESSION['emailaddress'] = $emailaddress;
+        $_SESSION['firstname'] = $firstname;
+        $_SESSION['middlename'] = $middlename;
+        $_SESSION['lastname'] = $lastname;
+        header("Location: register.php"); //redirect back to register page
+        exit(); //terminate script execution
+    }elseif ($firstname === $middlename || $middlename === $lastname || $firstname === $lastname) {
+        $_SESSION['status'] = "First name, middle name, and last name cannot be the same."; // Set session status message
+        $_SESSION['username'] = $username;
+        $_SESSION['emailaddress'] = $emailaddress;
+        $_SESSION['firstname'] = $firstname;
+        $_SESSION['middlename'] = $middlename;
+        $_SESSION['lastname'] = $lastname;
+        header("Location: register.php"); // Redirect back to register page
+        exit(); // Terminate script execution
+    } 
+    else {
+        // database operations
+        $verify_token = md5(rand()); // Generate a verification token
+
+        // Storing email address or username in the 'email' field of the database
+        $email_to_store = $emailaddress;
+
+        // check if the email address already exists in the database
+        $check_email_query = "SELECT email FROM users WHERE LOWER(email) = LOWER('$email_to_store') LIMIT 1";
+        $check_email_query_run = mysqli_query($conn, $check_email_query);
+
+        if (mysqli_num_rows($check_email_query_run) > 0) {
+            $_SESSION['status'] = "Email ID already exists. Please use another email address."; // Set session status message
+            header("Location: register.php"); // Redirect back to register page
+            exit(); // Terminate script execution
         }
-    }
 
-    // Check if email already exists in the database
-    $email_check_query = "SELECT * FROM user_profile WHERE email='$email' LIMIT 1";
-    $result = mysqli_query($conn, $email_check_query);
-    $user = mysqli_fetch_assoc($result);
-
-    if ($user) { // If email exists, set error message
-        if ($user['email'] === $email) {
-            $_SESSION['error'] = "Email already exists";
-        }
-    }
-
-    // Insert user data into the database if no errors
-    if (!isset($_SESSION['error'])) {
-        $sql = "INSERT INTO user_profile (full_name, email, password, address, phone_number, profile_pic, firstname, middlename, lastname)
-            VALUES ('$full_name', '$email', '$password', '$address', '$phone_number', '$target_file', '$firstname', '$middlename', '$lastname')";
+        // Insert user data into the database
+        $sql = "INSERT INTO users (username, password, profile_pic, first_name, middle_name, last_name, email, verify_token) 
+                VALUES ('$username', '$password', '$profile_pic', '$firstname', '$middlename', '$lastname', '$email_to_store', '$verify_token')";
 
         if (mysqli_query($conn, $sql)) {
-            $_SESSION['success'] = "New record created successfully"; // Success message for successful database insertion
+            // Registration successful message
+            $_SESSION['status'] = "Registration successful. Please verify your email."; // Set session status message
+            
+            // Perform email sending here
+            // Configure PHPMailer instance and send verification email
+            $mail = new PHPMailer(true);
+            try {
+                // Server settings
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = $emailaddress; // Your Gmail address
+                $mail->Password = $gmail_password; // Your Gmail password
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                // Recipient
+                $mail->setFrom($emailaddress, 'Your Name');
+                $mail->addAddress($emailaddress); // Add recipient
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = 'Email Verification';
+                $mail->Body    = "Click the following link to verify your email address:  <a href='http://localhost/laboratory4.php/php-admin/labact.php/admin/verify-email.php?token=$verify_token'>Verify Email</a>";
+                $mail->AltBody = 'Please verify your email address.';
+
+                $mail->send();
+            } catch (Exception $e) {
+                $_SESSION['status'] = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}"; // Set session status message
+                header("Location: register.php"); // Redirect back to register page
+                exit(); // Terminate script execution
+            }
+            header("Location: register.php"); // Redirect back to register page
+            exit(); // Terminate script execution
         } else {
-            $_SESSION['error'] = "Error: " . $sql . "<br>" . mysqli_error($conn); // Error message for database insertion failure
+            $_SESSION['status'] = "Error occurred while registering user."; // Set session status message
+            header("Location: register.php"); // Redirect back to register page
+            exit(); // Terminate script execution
         }
     }
 }
-
-// Retain input data in form fields
-$full_name = isset($_POST['full_name']) ? $_POST['full_name'] : '';
-$email = isset($_POST['email']) ? $_POST['email'] : '';
-$password = isset($_POST['password']) ? $_POST['password'] : '';
-$address = isset($_POST['address']) ? $_POST['address'] : '';
-$phone_number = isset($_POST['phone_number']) ? $_POST['phone_number'] : '';
-$firstname = isset($_POST['firstname']) ? $_POST['firstname'] : '';
-$middlename = isset($_POST['middlename']) ? $_POST['middlename'] : '';
-$lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>register</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="assets/plugins/fontawesome-free/css/all.min.css">
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" href="assets/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="assets/dist/css/adminlte.min.css">
 </head>
-<body>
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h2 class="text-center mb-4">User Registration</h2>
-                        <?php
-                        if(isset($_SESSION['error'])) {
-                            echo '<div class="alert alert-danger">'.$_SESSION['error'].'</div>';
-                            unset($_SESSION['error']);
-                        }
-                        if(isset($_SESSION['success'])) {
-                            echo '<div class="alert alert-success">'.$_SESSION['success'].'</div>';
-                            unset($_SESSION['success']);
-                        }
-                        ?>
-                        <form action="register.php" method="post" enctype="multipart/form-data">
-                            <div class="form-group">
-                                <label for="full_name">Full Name/Username</label>
-                                <input type="text" id="full_name" name="full_name" class="form-control" value="<?php echo $full_name; ?>" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="email">Email</label>
-                                <input type="email" id="email" name="email" class="form-control" value="<?php echo $email; ?>" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="password">Password</label>
-                                <input type="password" id="password" name="password" class="form-control" value="<?php echo $password; ?>" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="address">Address</label>
-                                <input type="text" id="address" name="address" class="form-control" value="<?php echo $address; ?>">
-                            </div>
-                            <div class="form-group">
-                                <label for="phone_number">Phone Number</label>
-                                <input type="text" id="phone_number" name="phone_number" class="form-control" value="<?php echo $phone_number; ?>">
-                            </div>
-                            <div class="form-group">
-                                <label for="profile_pic">Profile Picture</label>
-                                <input type="file" id="profile_pic" name="profile_pic" class="form-control-file">
-                            </div>
-                            <div class="form-group">
-                                <label for="firstname">First Name</label>
-                                <input type="text" id="firstname" name="firstname" class="form-control" value="<?php echo $firstname; ?>">
-                            </div>
-                            <div class="form-group">
-                                <label for="middlename">Middle Name</label>
-                                <input type="text" id="middlename" name="middlename" class="form-control" value="<?php echo $middlename; ?>">
-                            </div>
-                            <div class="form-group">
-                                <label for="lastname">Last Name</label>
-                                <input type="text" id="lastname" name="lastname" class="form-control" value="<?php echo $lastname; ?>">
-                            </div>
-                            <button type="submit" name="submit" class="btn btn-primary btn-block">Register</button>
-                            <p class="mb-0">
-                            <a href="login.php" class="text-center">Have account already? GO LOG IN</a>
-                        </form>
-                    </div>
-                </div>
+
+<body class="hold-transition register-page">
+    <div class="register-box">
+        <div class="card card-outline card-primary">
+            <div class="card-header text-center">
+                <a href="../../index2.html" class="h1"><b>Admin</b>LTE</a>
             </div>
-        </div>
+            <div class="card-body">
+                <h2>Register</h2>
+                <?php if (isset($_SESSION['status'])) { ?>
+                    <div class="alert alert-danger" role="alert">
+                        <?php echo $_SESSION['status']; ?>
+                    </div>
+                    <?php unset($_SESSION['status']); ?>
+                <?php } ?>
+                <form action="register.php" method="post" enctype="multipart/form-data">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="firstname" name="firstname" placeholder="First Name" value="<?php echo isset($_SESSION['firstname']) ? $_SESSION['firstname'] : ''; ?>">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-user"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="middlename" name="middlename" placeholder="Middle Name" value="<?php echo isset($_SESSION['middlename']) ? $_SESSION['middlename'] : ''; ?>">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-envelope"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last Name" value="<?php echo isset($_SESSION['lastname']) ? $_SESSION['lastname'] : ''; ?>">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="User Name" value="<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : ''; ?>">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm Password">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Email Address" value="<?php echo isset($_SESSION['email']) ? $_SESSION['email'] : ''; ?>">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-envelope"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" class="form-control" id="email_password" name="email_password" placeholder="Email Password">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="profile_pic" name="profile_pic">
+                            <label class="custom-file-label" for="profile_pic">Choose profile picture</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="icheck-primary">
+                                <input type="checkbox" id="agreeTerms" name="terms" value="agree">
+                                <label for="agreeTerms">
+                                    I agree to the <a href="#">terms</a>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- /.col -->
+                        <div class="col-4">
+                            <button type="submit" class="btn btn-primary btn-block">Register</button>
+                        </div>
+                        <!-- /.col -->
+                    </div>
+                </form>
+
+                <div class="social-auth-links text-center">
+                    <a href="#" class="btn btn-block btn-primary">
+                        <i class="fab fa-facebook mr-2"></i>
+                        Sign up using Facebook
+                    </a>
+                    <a href="#" class="btn btn-block btn-danger">
+                        <i class="fab fa-google-plus mr-2"></i>
+                        Sign up using Google+
+                    </a>
+                </div>
+
+                <a href="login.php" class="text-center">I already have a membership</a>
+            </div>
+            <!-- /.form-box -->
+        </div><!-- /.card -->
+    </div>
+    <!-- /.register-box -->
+
+    <!-- jQuery -->
+    <script src="assets/plugins/jquery/jquery.min.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="assets/dist/js/adminlte.min.js"></script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>register</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-image: url('space.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container-box {
+            width: 400px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .container-box h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .container-box .form-group label {
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-box">
+        <h2>Register</h2>
+        <?php if (isset($_SESSION['status'])) { ?>
+            <div class="alert alert-danger" role="alert">
+                <?php echo $_SESSION['status']; ?>
+            </div>
+            <?php unset($_SESSION['status']); ?>
+        <?php } ?>
+        <form action="register.php" method="post" enctype ="multipart/form-data">
+            <div class="form-group">
+                <label for="firstname">First Name</label>
+                <input type="text" class="form-control" id="firstname" name="firstname" placeholder="First Name" value="<?php echo isset($_SESSION['firstname']) ? $_SESSION['firstname'] : ''; ?>">
+            </div>
+            <div class="form-group">
+                <label for="middlename">Middle Name</label>
+                <input type="text" class="form-control" id="middlename" name="middlename" placeholder="Middle Name" value="<?php echo isset($_SESSION['middlename']) ? $_SESSION['middlename'] : ''; ?>">
+            </div>
+            <div class="form-group">
+                <label for="lastname">Last Name</label>
+                <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last Name" value="<?php echo isset($_SESSION['lastname']) ? $_SESSION['lastname'] : ''; ?>">
+            </div>
+            <div class="form-group">
+                <label for="username">User Name</label>
+                <input type="text" class="form-control" id="username" name="username" placeholder="User Name" value="<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : ''; ?>">
+            </div>
+             <div class="form-group">
+               <label for="profile_pic">Profile Picture</label>
+              <input type="file" id="profile_pic" name="profile_pic" class="form-control-file">
+                            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm Password">
+            </div>
+            <div class="form-group">
+                <label for="emailaddress">Email Address</label>
+                <input type="email" class="form-control" id="emailaddress" name="emailaddress" placeholder="Email Address" value="<?php echo isset($_SESSION['emailaddress']) ? $_SESSION['emailaddress'] : ''; ?>">
+            </div>
+            <div class="form-group">
+                <label for="gmail_password">Email Password</label>
+                <input type="password" class="form-control" id="gmail_password" name="gmail_password" placeholder="Email Password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+            <a href="login.php" class="btn btn-secondary btn-block">Back to Login</a>
+        </form>
     </div>
 </body>
+
 </html>
+ -->

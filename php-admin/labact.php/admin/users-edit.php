@@ -9,48 +9,39 @@ include('includes/header.php');
 include('includes/db-conn.php');
 
 // Check if the user is logged in
-if (isset($_SESSION['id'])) {
-    // If the user is logged in, retrieve the user ID from the session
-    $user_id = $_SESSION['id'];
-} else {
+if (!isset($_SESSION['user_id'])) {
     // If the user is not logged in, redirect to the login page
     header("Location: login.php");
     exit();
 }
 
-// Check if 'id' parameter is present in the URL
-if(isset($_GET['id'])) {
-    // If 'id' parameter is present, retrieve the user ID from the URL
-    $user_id = $_GET['id'];
+// Retrieve the user ID from the session
+$user_id = $_SESSION['user_id'];
 
-    // Fetch user information from the database based on the user ID
-    $query = "SELECT * FROM user_profile WHERE id = $user_id";
-    $result = mysqli_query($conn, $query);
+// Fetch user information from the database based on the user ID
+$query = "SELECT username, password, profile_pic, first_name, middle_name, last_name, email FROM users WHERE user_id = $user_id";
+$result = mysqli_query($conn, $query);
 
-    // Check if user exists
-    if(mysqli_num_rows($result) > 0) {
-        // If user exists, fetch user details
-        $user = mysqli_fetch_assoc($result);
-    } else {
-        // If user does not exist, display error message
-        echo "User not found.";
-        exit();
-    }
+// Check if user exists
+if(mysqli_num_rows($result) > 0) {
+    // If user exists, fetch user details
+    $user = mysqli_fetch_assoc($result);
 } else {
-    // If 'id' parameter is not present in the URL, handle the error or redirect the user
-    // For instance, redirect the user to the profile page or display an error message
-    header("Location: profile.php");
+    // If user does not exist, display error message
+    echo "User not found.";
     exit();
 }
 
 // Check if form is submitted
 if($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate and sanitize user input
-    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $username = mysqli_real_escape_string($conn, $_POST['username']);
     $password = mysqli_real_escape_string($conn, $_POST['password']);
-    $phone_number = mysqli_real_escape_string($conn, $_POST['phone_number']);
-    $address = mysqli_real_escape_string($conn, $_POST['address']);
+    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
+    $middle_name = mysqli_real_escape_string($conn, $_POST['middle_name']);
+    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $profile_pic = mysqli_real_escape_string($conn, $_POST['profile_pic']);
 
     // Handle profile picture upload
     if ($_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
@@ -93,7 +84,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
             // If upload was successful, move the file to the target directory
             if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
                 // File uploaded successfully, update user information in the database
-                $update_query = "UPDATE user_profile SET full_name = '$full_name', email = '$email', password = '$password', phone_number = '$phone_number', address = '$address', profile_pic = '$target_file' WHERE id = $user_id";
+                $update_query = "UPDATE users SET username = '$username', password = '$password', profile_pic = '$profile_pic', first_name = '$first_name', middle_name = '$middle_name', last_name = '$last_name', email = '$email', profile_pic = '$target_file' WHERE user_id = $user_id";
 
                 // Execute the update query
                 if(mysqli_query($conn, $update_query)) {
@@ -111,7 +102,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     } else {
         // If no new profile picture is uploaded, update other user information
-        $update_query = "UPDATE user_profile SET full_name = '$full_name', email = '$email', password = '$password', phone_number = '$phone_number', address = '$address' WHERE id = $user_id";
+        $update_query = "UPDATE users SET username = '$username', password = '$password', first_name = '$first_name', middle_name = '$middle_name', last_name = '$last_name', email = '$email' WHERE user_id = $user_id";
 
         // Execute the update query
         if(mysqli_query($conn, $update_query)) {
@@ -138,24 +129,28 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                 <form action="" method="POST" enctype="multipart/form-data">
                     <!-- Input fields for updating user information -->
                     <div class="mb-3">
-                        <label for="full_name" class="form-label">Full Name</label>
-                        <input type="text" id="full_name" name="full_name" class="form-control" value="<?php echo $user['full_name']; ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" value="<?php echo $user['email']; ?>" required>
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" id="username" name="username" class="form-control" value="<?php echo $user['username']; ?>" required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
                         <input type="password" id="password" name="password" class="form-control" value="<?php echo $user['password']; ?>" required>
                     </div>
                     <div class="mb-3">
-                        <label for="phone_number" class="form-label">Phone Number</label>
-                        <input type="text" id="phone_number" name="phone_number" class="form-control" value="<?php echo $user['phone_number']; ?>">
+                        <label for="first_name" class="form-label">First Name</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control" value="<?php echo $user['first_name']; ?>" required>
                     </div>
                     <div class="mb-3">
-                        <label for="address" class="form-label">Address</label>
-                        <input type="text" id="address" name="address" class="form-control" value="<?php echo $user['address']; ?>">
+                        <label for="middle_name" class="form-label">Middle Name</label>
+                        <input type="text" id="middle_name" name="middle_name" class="form-control" value="<?php echo $user['middle_name']; ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="last_name" class="form-label">Last Name</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control" value="<?php echo $user['last_name']; ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" value="<?php echo $user['email']; ?>" required>
                     </div>
                     <div class="mb-3">
                         <label for="profile_pic" class="form-label">Profile Picture</label>
@@ -164,6 +159,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                     <!-- Submit button to update user information -->
                     <div class="text-center">
                         <button type="submit" class="btn btn-primary">Update User</button>
+                        <button type="submit" class="btn btn-primary">Back</button>
                     </div>
                 </form>
             </div>
