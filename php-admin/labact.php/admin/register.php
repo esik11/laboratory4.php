@@ -21,52 +21,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Validate and sanitize input fields
-                $username = validate($_POST['username']);
-            $password = validate($_POST['password']);
-            $confirm_password = validate($_POST['confirm_password']);
-            $emailaddress = validate($_POST['emailaddress']);
-            $firstname = validate($_POST['firstname']);
-            $middlename = validate($_POST['middlename']);
-            $lastname = validate($_POST['lastname']);
-            $gmail_password = validate($_POST['gmail_password']);
+    $username = validate($_POST['username']);
+    $password = validate($_POST['password']);
+    $confirm_password = validate($_POST['confirm_password']);
+    $emailaddress = validate($_POST['emailaddress']);
+    $firstname = validate($_POST['firstname']);
+    $middlename = validate($_POST['middlename']);
+    $lastname = validate($_POST['lastname']);
+    $gmail_password = validate($_POST['gmail_password']);
 
-            // Handle file upload
-            $profile_pic = '';
-            if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
-                $file_tmp_name = $_FILES['profile_pic']['tmp_name'];
-                $file_name = $_FILES['profile_pic']['name'];
-                $file_size = $_FILES['profile_pic']['size'];
-                $file_type = $_FILES['profile_pic']['type'];
+    // Handle file upload
+    $profile_pic = '';
+    if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
+        $file_tmp_name = $_FILES['profile_pic']['tmp_name'];
+        $file_name = $_FILES['profile_pic']['name'];
+        $file_size = $_FILES['profile_pic']['size'];
+        $file_type = $_FILES['profile_pic']['type'];
 
-                // Validate file type and size
-                $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-                $max_size = 1048576; // 1MB
+        // Validate file type and size
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+        $max_size = 1048576; // 1MB
 
-                if (!in_array($file_type, $allowed_types) || $file_size > $max_size) {
-                    $_SESSION['status'] = "Invalid file type or size. Please upload a JPEG, PNG, or GIF image with a maximum size of 1MB.";
-                    header("Location: register.php");
-                    exit();
-                }
+        if (!in_array($file_type, $allowed_types) || $file_size > $max_size) {
+            $_SESSION['status'] = "Invalid file type or size. Please upload a JPEG, PNG, or GIF image with a maximum size of 1MB.";
+            header("Location: register.php");
+            exit();
+        }
 
-                // Move the uploaded file to a permanent location
-                $upload_dir = 'uploads/';
-                $upload_file = $upload_dir . basename($file_name);
-                if (!move_uploaded_file($file_tmp_name, $upload_file)) {
-                    $_SESSION['status'] = "Error uploading file.";
-                    header("Location: register.php");
-                    exit();
-                }
+        // Move the uploaded file to a permanent location
+        $upload_dir = 'uploads/';
+        $upload_file = $upload_dir . basename($file_name);
+        if (!move_uploaded_file($file_tmp_name, $upload_file)) {
+            $_SESSION['status'] = "Error uploading file.";
+            header("Location: register.php");
+            exit();
+        }
 
-                // Store the file path in the database
-                $profile_pic = $upload_file;
-            }
-                // Checking if passwords match
-                if ($password !== $confirm_password) {
-                    $_SESSION['status'] = "Passwords do not match."; // Set session status message
-                    header("Location: signup.php"); // Redirect back to signup page
-                    exit(); // Terminate script execution
-                }
-  
+        // Store the file path in the database
+        $profile_pic = $upload_file;
+    }
+    // Checking if passwords match
+    if ($password !== $confirm_password) {
+        $_SESSION['status'] = "Passwords do not match."; // Set session status message
+        $_SESSION['username'] = $username;
+        $_SESSION['emailaddress'] = $emailaddress;
+        $_SESSION['firstname'] = $firstname;
+        $_SESSION['middlename'] = $middlename;
+        $_SESSION['lastname'] = $lastname;
+        header("Location: signup.php"); // Redirect back to signup page
+        exit(); // Terminate script execution
+    }
+
     // check if any field is empty
     if (empty($username) || empty($password) || empty($confirm_password) || empty($emailaddress) || empty($firstname) || empty($middlename) || empty($lastname) || empty($gmail_password)) {
         $_SESSION['status'] = "All fields are required."; // Set session status message
@@ -86,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['lastname'] = $lastname;
         header("Location: register.php"); //redirect back to register page
         exit(); //terminate script execution
-    }elseif ($firstname === $middlename || $middlename === $lastname || $firstname === $lastname) {
+    } elseif ($firstname === $middlename || $middlename === $lastname || $firstname === $lastname) {
         $_SESSION['status'] = "First name, middle name, and last name cannot be the same."; // Set session status message
         $_SESSION['username'] = $username;
         $_SESSION['emailaddress'] = $emailaddress;
@@ -95,8 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['lastname'] = $lastname;
         header("Location: register.php"); // Redirect back to register page
         exit(); // Terminate script execution
-    } 
-    else {
+    } else {
         // database operations
         $verify_token = md5(rand()); // Generate a verification token
 
@@ -247,7 +251,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
                     <div class="input-group mb-3">
-                        <input type="email" class="form-control" id="email" name="email" placeholder="Email Address" value="<?php echo isset($_SESSION['email']) ? $_SESSION['email'] : ''; ?>">
+                        <input type="email" class="form-control" id="emailaddress" name="emailaddress" placeholder="Email Address" value="<?php echo isset($_SESSION['emailaddress']) ? $_SESSION['emailaddress'] : ''; ?>">
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-envelope"></span>
@@ -255,7 +259,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
                     <div class="input-group mb-3">
-                        <input type="password" class="form-control" id="email_password" name="email_password" placeholder="Email Password">
+                        <input type="password" class="form-control" id="gmail_password" name="gmail_password" placeholder="Email Password">
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
@@ -313,108 +317,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </body>
 
 </html>
-
-
-
-
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>register</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        body {
-            background-image: url('space.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .container-box {
-            width: 400px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .container-box h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .container-box .form-group label {
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container-box">
-        <h2>Register</h2>
-        <?php if (isset($_SESSION['status'])) { ?>
-            <div class="alert alert-danger" role="alert">
-                <?php echo $_SESSION['status']; ?>
-            </div>
-            <?php unset($_SESSION['status']); ?>
-        <?php } ?>
-        <form action="register.php" method="post" enctype ="multipart/form-data">
-            <div class="form-group">
-                <label for="firstname">First Name</label>
-                <input type="text" class="form-control" id="firstname" name="firstname" placeholder="First Name" value="<?php echo isset($_SESSION['firstname']) ? $_SESSION['firstname'] : ''; ?>">
-            </div>
-            <div class="form-group">
-                <label for="middlename">Middle Name</label>
-                <input type="text" class="form-control" id="middlename" name="middlename" placeholder="Middle Name" value="<?php echo isset($_SESSION['middlename']) ? $_SESSION['middlename'] : ''; ?>">
-            </div>
-            <div class="form-group">
-                <label for="lastname">Last Name</label>
-                <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last Name" value="<?php echo isset($_SESSION['lastname']) ? $_SESSION['lastname'] : ''; ?>">
-            </div>
-            <div class="form-group">
-                <label for="username">User Name</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="User Name" value="<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : ''; ?>">
-            </div>
-             <div class="form-group">
-               <label for="profile_pic">Profile Picture</label>
-              <input type="file" id="profile_pic" name="profile_pic" class="form-control-file">
-                            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Password">
-            </div>
-            <div class="form-group">
-                <label for="confirm_password">Confirm Password</label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm Password">
-            </div>
-            <div class="form-group">
-                <label for="emailaddress">Email Address</label>
-                <input type="email" class="form-control" id="emailaddress" name="emailaddress" placeholder="Email Address" value="<?php echo isset($_SESSION['emailaddress']) ? $_SESSION['emailaddress'] : ''; ?>">
-            </div>
-            <div class="form-group">
-                <label for="gmail_password">Email Password</label>
-                <input type="password" class="form-control" id="gmail_password" name="gmail_password" placeholder="Email Password">
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Register</button>
-            <a href="login.php" class="btn btn-secondary btn-block">Back to Login</a>
-        </form>
-    </div>
-</body>
-
-</html>
- -->

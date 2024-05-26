@@ -117,6 +117,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
+
 <!-- HTML content for the edit user form -->
 <!-- The form allows users to update their profile information -->
 <div class="row">
