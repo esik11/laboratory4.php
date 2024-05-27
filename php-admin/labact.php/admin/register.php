@@ -29,6 +29,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $middlename = validate($_POST['middlename']);
     $lastname = validate($_POST['lastname']);
     $gmail_password = validate($_POST['gmail_password']);
+    $address = validate($_POST['address']);
+    $phone = validate($_POST['phone_number']);
 
     // Handle file upload
     $profile_pic = '';
@@ -73,22 +75,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // check if any field is empty
-    if (empty($username) || empty($password) || empty($confirm_password) || empty($emailaddress) || empty($firstname) || empty($middlename) || empty($lastname) || empty($gmail_password)) {
+    if (empty($username) || empty($password) || empty($confirm_password) || empty($emailaddress) || empty($firstname) || empty($middlename) || empty($lastname) || empty($gmail_password)
+              ||  empty($address) || empty($phone)) {
+
         $_SESSION['status'] = "All fields are required."; // Set session status message
         $_SESSION['username'] = $username;
         $_SESSION['emailaddress'] = $emailaddress;
         $_SESSION['firstname'] = $firstname;
         $_SESSION['middlename'] = $middlename;
         $_SESSION['lastname'] = $lastname;
-        header("Location: register.php"); //redirect back to register page
-        exit(); //terminate script execution
-    } elseif ($password !== $confirm_password) { //check again for passwords match
-        $_SESSION['status'] = "Passwords do not match."; //set session status message
-        $_SESSION['username'] = $username;
-        $_SESSION['emailaddress'] = $emailaddress;
-        $_SESSION['firstname'] = $firstname;
-        $_SESSION['middlename'] = $middlename;
-        $_SESSION['lastname'] = $lastname;
+        $_SESSION['address'] = $address;
+        $_SESSION['phone_number'] = $phone;
         header("Location: register.php"); //redirect back to register page
         exit(); //terminate script execution
     } elseif ($firstname === $middlename || $middlename === $lastname || $firstname === $lastname) {
@@ -101,6 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         header("Location: register.php"); // Redirect back to register page
         exit(); // Terminate script execution
     } else {
+        // Hash the password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
         // database operations
         $verify_token = md5(rand()); // Generate a verification token
 
@@ -118,8 +118,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         // Insert user data into the database
-        $sql = "INSERT INTO users (username, password, profile_pic, first_name, middle_name, last_name, email, verify_token) 
-                VALUES ('$username', '$password', '$profile_pic', '$firstname', '$middlename', '$lastname', '$email_to_store', '$verify_token')";
+        $sql = "INSERT INTO users (username, password, profile_pic, first_name, middle_name, last_name, address, phone_number, email, verify_token) 
+                VALUES ('$username', '$hashed_password', '$profile_pic', '$firstname', '$middlename', '$lastname', '$address', '$phone', '$email_to_store', '$verify_token')";
 
         if (mysqli_query($conn, $sql)) {
             // Registration successful message
@@ -171,7 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>register</title>
+    <title>Register</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
     <!-- Google Font: Source Sans Pro -->
@@ -211,7 +211,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" class="form-control" id="middlename" name="middlename" placeholder="Middle Name" value="<?php echo isset($_SESSION['middlename']) ? $_SESSION['middlename'] : ''; ?>">
                         <div class="input-group-append">
                             <div class="input-group-text">
-                                <span class="fas fa-envelope"></span>
+                                <span class="fas fa-user"></span>
                             </div>
                         </div>
                     </div>
@@ -219,7 +219,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last Name" value="<?php echo isset($_SESSION['lastname']) ? $_SESSION['lastname'] : ''; ?>">
                         <div class="input-group-append">
                             <div class="input-group-text">
-                                <span class="fas fa-lock"></span>
+                                <span class="fas fa-user"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="address" name="address" placeholder="Address" value="<?php echo isset($_SESSION['address']) ? $_SESSION['address'] : ''; ?>">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-home"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Phone Number" value="<?php echo isset($_SESSION['phone_number']) ? $_SESSION['phone_number'] : ''; ?>">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-phone"></span>
                             </div>
                         </div>
                     </div>
@@ -227,8 +243,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" class="form-control" id="username" name="username" placeholder="User Name" value="<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : ''; ?>">
                         <div class="input-group-append">
                             <div class="input-group-text">
-                                <span class="fas fa-lock"></span>
-
+                                <span class="fas fa-user"></span>
                             </div>
                         </div>
                     </div>
@@ -237,7 +252,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
-
                             </div>
                         </div>
                     </div>
@@ -246,7 +260,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
-
                             </div>
                         </div>
                     </div>
@@ -263,7 +276,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
-
                             </div>
                         </div>
                     </div>
@@ -282,14 +294,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </label>
                             </div>
                         </div>
-                        <!-- /.col -->
                         <div class="col-4">
                             <button type="submit" class="btn btn-primary btn-block">Register</button>
                         </div>
-                        <!-- /.col -->
                     </div>
                 </form>
-
                 <div class="social-auth-links text-center">
                     <a href="#" class="btn btn-block btn-primary">
                         <i class="fab fa-facebook mr-2"></i>
@@ -300,13 +309,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         Sign up using Google+
                     </a>
                 </div>
-
                 <a href="login.php" class="text-center">I already have a membership</a>
             </div>
-            <!-- /.form-box -->
-        </div><!-- /.card -->
+        </div>
     </div>
-    <!-- /.register-box -->
 
     <!-- jQuery -->
     <script src="assets/plugins/jquery/jquery.min.js"></script>

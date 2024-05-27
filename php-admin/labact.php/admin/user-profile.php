@@ -5,23 +5,28 @@ session_start();
 // Include header, topbar, and sidebar files for UI
 include('includes/header.php');
 
-
-
 // Include database connection script
 include('includes/db-conn.php');
 
-
 // Check if user is logged in
 if (isset($_SESSION['user_id'])) {
-    // Retrieve user ID from session
-    $user_id = $_SESSION['user_id'];
+    // Retrieve user ID from session and ensure it's an integer
+    $user_id = intval($_SESSION['user_id']);
 
-    // Query to fetch user data based on user ID
+    // Prepare SQL statement with a parameterized query to prevent SQL injection
+    $query = "SELECT username, password, profile_pic, first_name, middle_name, last_name, address, phone_number, email FROM users WHERE user_id = ?";
 
-$query ="SELECT username, password, profile_pic, first_name, middle_name, last_name,  email  FROM users WHERE user_id= $user_id";
+    // Prepare the statement
+    $stmt = mysqli_prepare($conn, $query);
 
-    // Execute query
-    $result = mysqli_query($conn, $query);
+    // Bind parameters
+    mysqli_stmt_bind_param($stmt, "i", $user_id);
+
+    // Execute the statement
+    mysqli_stmt_execute($stmt);
+
+    // Get the result
+    $result = mysqli_stmt_get_result($stmt);
 
     // Check if query is successful and user data is found
     if ($result && mysqli_num_rows($result) > 0) {
@@ -85,14 +90,14 @@ $query ="SELECT username, password, profile_pic, first_name, middle_name, last_n
                 <strong><i class="fas fa-book mr-1"></i> Education</strong>
 
                 <p class="text-muted">
-                  B.S. in Computer Science from the University of Tennessee at Knoxville
+              
                 </p>
  
                 <hr>
 
                 <strong><i class="fas fa-map-marker-alt mr-1"></i> Location</strong>
 
-                <p class="text-muted">Malibu, California</p>
+                <p class="text-muted"><?php echo $user['address']; ?></p>
 
                 <hr>
 
@@ -139,11 +144,12 @@ $query ="SELECT username, password, profile_pic, first_name, middle_name, last_n
                     </div>
                     <!-- /.user-block -->
                     <p>Email: <?php echo $user['email']; ?></p>
-                    <p>Password: <?php echo $user['password']; ?></p>
                     <p>First Name: <?php echo $user['first_name']; ?></p>
                     <p>Middle Name: <?php echo $user['middle_name']; ?></p>
                     <p>Last Name: <?php echo $user['last_name']; ?></p>
                     <p>Email: <?php echo $user['email']; ?></p>           
+                    <p>Phone Number: <?php echo $user['phone_number']; ?></p>
+                    <p>Address: <?php echo $user['address']; ?></p>
                     <a href='users-edit.php?id=<?php echo $user_id; ?>' class='btn btn-success btn-sm'>Edit</a>
                     <a href="index.php" class='btn btn-success btn-sm'>Back</a>
 

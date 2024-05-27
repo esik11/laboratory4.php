@@ -5,9 +5,6 @@ session_start();
 // Include database connection
 include('includes/db-conn.php');
 
-// Connect to the database
-$conn = mysqli_connect($sname, $uname, $password, $db_name);
-
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
     // Redirect to the login page if the user is not logged in
@@ -15,11 +12,43 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Connect to the database
+$conn = mysqli_connect($sname, $uname, $password, $db_name);
+
+// Check if connection is successful
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 // Get the user information from the database
 $user_id = $_SESSION['user_id'];
-$query = "SELECT * FROM users WHERE user_id = $user_id";
-$result = mysqli_query($conn, $query);
-$user = mysqli_fetch_assoc($result);
+$query = "SELECT username, profile_pic FROM users WHERE user_id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Check if the query was successful
+if (!$result) {
+    die("Error executing query: " . $conn->error);
+}
+
+// Fetch user details
+if ($result->num_rows > 0) {
+    $user = $result->fetch_assoc();
+} else {
+    // Redirect to login if user not found
+    header("Location: login.php");
+    exit();
+}
+
+// Check if 'username' key exists in $user array before accessing it
+if (isset($user['username'])) {
+    $username = htmlspecialchars($user['username']);
+} else {
+    // Handle the case where 'username' key is not present in $user array
+    $username = "Unknown";
+}
 
 // Include header, topbar, and sidebar files
 include('includes/header.php');
@@ -35,10 +64,10 @@ include('includes/sidebar.php');
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-12 text-center">
-                        <h1>Welcome <?php echo $user['username']; ?></h1>
-                        <div class="image">
-                            <img src=<?php echo $user['profile_pic']; ?> class="img-circle elevation-2" alt="User Image">
-                        </div>
+                        <h1>Welcome <?php echo htmlspecialchars($user['username']); ?></h1>
+                        <div class="image-box">
+    <img src="<?php echo htmlspecialchars($user['profile_pic']); ?>" class="img-thumbnail" alt="User Image" style="width:500px; height:500px;">
+</div>
                         <div class="info">
                             <button type="button" class="btn btn-primary" onclick="location.href='user-profile.php?user_id=<?php echo $user_id; ?>';">User Profile</button>
                         </div>

@@ -25,9 +25,18 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
         exit(); // Terminate script execution
     } else {
         // SQL query to select user based on username
-        $sql = "SELECT * FROM users WHERE username='$username'";
-        // Execute SQL query
-        $result = mysqli_query($conn, $sql);
+        $sql = "SELECT * FROM users WHERE username=?";
+        // Prepare the statement to prevent SQL injection
+        $stmt = mysqli_prepare($conn, $sql);
+
+        // Bind parameters to the prepared statement
+        mysqli_stmt_bind_param($stmt, "s", $username);
+
+        // Execute the prepared statement
+        mysqli_stmt_execute($stmt);
+
+        // Get the result of the query
+        $result = mysqli_stmt_get_result($stmt);
 
         // Check if only one row is returned (valid username)
         if(mysqli_num_rows($result) === 1){
@@ -35,8 +44,8 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
             $row = mysqli_fetch_assoc($result);
             // Check if the user's email is verified
             if($row['verified'] == 1){
-                // Check if the entered password matches the stored password
-                if($row['password'] === $password){
+                // Verify the entered password with the stored hashed password
+                if(password_verify($password, $row['password'])){
                     // Set session variables with user data
                     $_SESSION['username'] = $row['username'];
                     $_SESSION['name'] = $row['name'];
