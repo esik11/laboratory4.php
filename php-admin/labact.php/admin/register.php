@@ -127,42 +127,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             // Perform email sending here
             // Configure PHPMailer instance and send verification email
-            $mail = new PHPMailer(true);
-            try {
-                // Server settings
-                $mail->isSMTP();
-                $mail->Host = 'smtp.gmail.com';
-                $mail->SMTPAuth = true;
-                $mail->Username = $emailaddress; // Your Gmail address
-                $mail->Password = $gmail_password; // Your Gmail password
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = 587;
+
+                    $mail = new PHPMailer(true); // Create a new instance of PHPMailer with exceptions enabled
+                        try {
+                    // Server settings
+                $mail->isSMTP(); // Set mailer to use SMTP
+                $mail->Host = 'smtp.gmail.com'; // Set the SMTP host
+                $mail->SMTPAuth = true; // Enable SMTP authentication
+                $mail->Username = $emailaddress; // Set the Gmail address as the username
+                $mail->Password = $gmail_password; // Set the Gmail password
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Set the encryption type
+                $mail->Port = 587; // Set the SMTP port
 
                 // Recipient
-                $mail->setFrom($emailaddress, 'Your Name');
-                $mail->addAddress($emailaddress); // Add recipient
+                $mail->setFrom($emailaddress, 'Your Name'); // Set the sender's email address and name
+                $mail->addAddress($emailaddress); // Add the recipient's email address
 
                 // Content
-                $mail->isHTML(true);
-                $mail->Subject = 'Email Verification';
-                $mail->Body    = "Click the following link to verify your email address:  <a href='http://localhost/laboratory4.php/php-admin/labact.php/admin/verify-email.php?token=$verify_token'>Verify Email</a>";
-                $mail->AltBody = 'Please verify your email address.';
+                $mail->isHTML(true); // Set the email format to HTML
+                $mail->Subject = 'Email Verification'; // Set the email subject
+                $mail->Body    = "Click the following link to verify your email address:  <a href='http://localhost/laboratory4.php/php-admin/labact.php/admin/verify-email.php?token=$verify_token'>Verify Email</a>"; // Set the email body with a verification link
+                $mail->AltBody = 'Please verify your email address.'; // Set the alternative email body for non-HTML clients
 
-                $mail->send();
+                $mail->send(); // Send the email
             } catch (Exception $e) {
-                $_SESSION['status'] = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}"; // Set session status message
+                // Catch any exceptions that occur during email sending
+                $_SESSION['status'] = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}"; // Set session status message with the error information
                 header("Location: register.php"); // Redirect back to register page
                 exit(); // Terminate script execution
             }
             header("Location: register.php"); // Redirect back to register page
             exit(); // Terminate script execution
-        } else {
-            $_SESSION['status'] = "Error occurred while registering user."; // Set session status message
-            header("Location: register.php"); // Redirect back to register page
-            exit(); // Terminate script execution
-        }
-    }
-}
+            } else {
+                // If the registration fails, set an error message and redirect back to the register page
+                $_SESSION['status'] = "Error occurred while registering user."; // Set session status message
+                header("Location: register.php"); // Redirect back to register page
+                exit(); // Terminate script execution
+            }
+                }
+            }
 ?>
 
 <!DOCTYPE html>
