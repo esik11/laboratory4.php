@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     unset($error_message);
                 }
                 ?>
-                <form action="" method="POST" enctype="multipart/form-data">
+                <form action="" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
                     <!-- Input fields for updating user information -->
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
@@ -175,15 +175,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
                     <div class="mb-3">
                         <label for="first_name" class="form-label">First Name</label>
-                        <input type="text" id="first_name" name="first_name" class="form-control" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                        <input type="text" id="first_name" name="first_name" class="form-control" value="<?php echo htmlspecialchars($user['first_name']); ?>" required pattern="[A-Za-z\s]+" title="First name should only contain letters and spaces.">
                     </div>
                     <div class="mb-3">
                         <label for="middle_name" class="form-label">Middle Name</label>
-                        <input type="text" id="middle_name" name="middle_name" class="form-control" value="<?php echo htmlspecialchars($user['middle_name']); ?>">
+                        <input type="text" id="middle_name" name="middle_name" class="form-control" value="<?php echo htmlspecialchars($user['middle_name']); ?>" pattern="[A-Za-z\s]*" title="Middle name should only contain letters and spaces.">
                     </div>
                     <div class="mb-3">
                         <label for="last_name" class="form-label">Last Name</label>
-                        <input type="text" id="last_name" name="last_name" class="form-control" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
+                        <input type="text" id="last_name" name="last_name" class="form-control" value="<?php echo htmlspecialchars($user['last_name']); ?>" required pattern="[A-Za-z\s]+" title="Last name should only contain letters and spaces.">
                     </div>
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
@@ -199,15 +199,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
                     <div class="mb-3">
                         <label for="phone" class="form-label">Phone Number</label>
-                        <input type="text" id="phone" name="phone" class="form-control" value="<?php echo htmlspecialchars($user['phone_number']); ?>" required>
+                        <input type="text" id="phone" name="phone" class="form-control" value="<?php echo htmlspecialchars($user['phone_number']); ?>" required pattern="\d+" title="Phone number should only contain numbers.">
                     </div>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
-                    <a href="user-profile.php" class = "btn btn-primary">BACK</a>
+                    <a href="user-profile.php" class="btn btn-primary">BACK</a>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function validateForm() {
+    var firstName = document.getElementById('first_name').value;
+    var middleName = document.getElementById('middle_name').value;
+    var lastName = document.getElementById('last_name').value;
+    var phone = document.getElementById('phone').value;
+
+    var namePattern = /^[A-Za-z\s]+$/;
+    var phonePattern = /^\d+$/;
+
+    if (!namePattern.test(firstName)) {
+        alert('First name should only contain letters and spaces.');
+        return false;
+    }
+    if (middleName && !namePattern.test(middleName)) {
+        alert('Middle name should only contain letters and spaces.');
+        return false;
+    }
+    if (!namePattern.test(lastName)) {
+        alert('Last name should only contain letters and spaces.');
+        return false;
+    }
+    if (!phonePattern.test(phone)) {
+        alert('Phone number should only contain numbers.');
+        return false;
+    }
+    return true;
+}
+</script>
 
 <?php
 // Include footer file

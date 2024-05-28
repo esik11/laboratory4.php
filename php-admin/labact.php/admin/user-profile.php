@@ -151,7 +151,7 @@ if (isset($_SESSION['user_id'])) {
                     <p>Phone Number: <?php echo $user['phone_number']; ?></p>
                     <p>Address: <?php echo $user['address']; ?></p>
                     <a href='users-edit.php?id=<?php echo $user_id; ?>' class='btn btn-success btn-sm'>Edit</a>
-                    <a href="index.php" class='btn btn-success btn-sm'>Back</a>
+                    <a href='index.php?id=<?php echo $user_id; ?>' class='btn btn-success btn-sm'>Back</a>
 
                     <a href="../../labact.php/admin/logout.php" class="d-block">Logout</a>                
                 </div>
