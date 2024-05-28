@@ -61,6 +61,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         // Hash the new password
         $password = password_hash($new_password, PASSWORD_DEFAULT);
+    } else {
+        // If no new password is provided, retain the existing password
+        $password = $user['password'];
     }
 
     // Handle profile picture upload
@@ -104,20 +107,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // If upload was successful, move the file to the target directory
             if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
                 // File uploaded successfully, update user information in the database
-                $update_query = "UPDATE users SET username = ?, first_name = ?, middle_name = ?, last_name = ?, address = ?, phone_number = ?, email = ?, profile_pic = ?";
-                // Add password update if new password is provided
-                if (isset($password)) {
-                    // If password is provided, update it along with other user information
-                    $update_query .= ", password = ?";
-                }
-                $update_query .= " WHERE user_id = ?";
+                $update_query = "UPDATE users SET username = ?, first_name = ?, middle_name = ?, last_name = ?, address = ?, phone_number = ?, email = ?, profile_pic = ?, password = ? WHERE user_id = ?";
                 
                 $stmt = $conn->prepare($update_query);
-                if (isset($password)) {
-                    $stmt->bind_param("sssssssssi", $username, $first_name, $middle_name, $last_name, $address, $phone, $email, $target_file, $password, $user_id);
-                } else {
-                    $stmt->bind_param("ssssssssi", $username, $first_name, $middle_name, $last_name, $address, $phone, $email, $target_file, $user_id);
-                }
+                $stmt->bind_param("sssssssssi", $username, $first_name, $middle_name, $last_name, $address, $phone, $email, $target_file, $password, $user_id);
                 
                 // Execute the update query
                 if ($stmt->execute()) {
@@ -136,19 +129,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     } else {
         // If no new profile picture is uploaded, update other user information
-        $update_query = "UPDATE users SET username = ?, first_name = ?, middle_name = ?, last_name = ?, address = ?, phone_number = ?, email = ?";
-        // Add password update if new password is provided
-        if (isset($password)) {
-            $update_query .= ", password = ?";
-        }
-        $update_query .= " WHERE user_id = ?";
+        $update_query = "UPDATE users SET username = ?, first_name = ?, middle_name = ?, last_name = ?, address = ?, phone_number = ?, email = ?, password = ? WHERE user_id = ?";
         
         $stmt = $conn->prepare($update_query);
-        if (isset($password)) {
-            $stmt->bind_param("ssssssssi", $username, $first_name, $middle_name, $last_name, $address, $phone, $email, $password, $user_id);
-        } else {
-            $stmt->bind_param("sssssssi", $username, $first_name, $middle_name, $last_name, $address, $phone, $email, $user_id);
-        }
+        $stmt->bind_param("ssssssssi", $username, $first_name, $middle_name, $last_name, $address, $phone, $email, $password, $user_id);
 
         // Execute the update query
         if ($stmt->execute()) {
@@ -218,6 +202,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" id="phone" name="phone" class="form-control" value="<?php echo htmlspecialchars($user['phone_number']); ?>" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="user-profile.php" class = "btn btn-primary">BACK</a>
                 </form>
             </div>
         </div>
