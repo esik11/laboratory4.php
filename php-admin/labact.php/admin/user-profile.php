@@ -253,10 +253,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
             </form>
-        </div>
-    </div>
-</div>
-                
+      
                   <div class="tab-pane" id="loginSettings">
     <form id="passwordForm" action="password-code.php" method="POST" onsubmit="return validatePasswordForm()">
         <div class="mb-3">

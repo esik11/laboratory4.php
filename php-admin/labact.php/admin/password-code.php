@@ -18,7 +18,7 @@ if (isset($_SESSION['user_id'])) {
     $confirm_password = $_POST['confirm_password'];
 
     // Prepare SQL statement to retrieve the current password from the database
-    $query = "SELECT password FROM users WHERE user_id = ?";
+    $query = "SELECT password FROM users WHERE user_id =?";
 
     // Prepare the statement
     $stmt = mysqli_prepare($conn, $query);
@@ -42,28 +42,50 @@ if (isset($_SESSION['user_id'])) {
             // Check if the new password matches the confirm password
             if ($new_password === $confirm_password) {
                 // Check if the new password is different from the current password
-                if ($new_password !== $current_password) {
-                    // Hash the new password
-                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                if ($new_password!== $current_password) {
+                    // Retrieve old passwords from the passwords table
+                    $old_passwords_query = "SELECT password FROM passwords WHERE user_id =?";
+                    $old_passwords_stmt = mysqli_prepare($conn, $old_passwords_query);
+                    mysqli_stmt_bind_param($old_passwords_stmt, "i", $user_id);
+                    mysqli_stmt_execute($old_passwords_stmt);
+                    $old_passwords_result = mysqli_stmt_get_result($old_passwords_stmt);
 
-                    // Prepare SQL statement to update the password in the database
-                    $update_query = "UPDATE users SET password = ? WHERE user_id = ?";
+                    $is_old_password = false;
+                    while ($old_password = mysqli_fetch_assoc($old_passwords_result)) {
+                        if (password_verify($new_password, $old_password['password'])) {
+                            $is_old_password = true;
+                            break;
+                        }
+                    }
 
-                    // Prepare the statement
-                    $update_stmt = mysqli_prepare($conn, $update_query);
+                    if (!$is_old_password) {
+                        // Hash the new password
+                        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
 
-                    // Bind parameters
-                    mysqli_stmt_bind_param($update_stmt, "si", $hashed_password, $user_id);
+                        // Insert the new password into the passwords table
+                        $insert_query = "INSERT INTO passwords (user_id, password) VALUES (?,?)";
+                        $insert_stmt = mysqli_prepare($conn, $insert_query);
+                        mysqli_stmt_bind_param($insert_stmt, "is", $user_id, $hashed_password);
+                        mysqli_stmt_execute($insert_stmt);
 
-                    // Execute the statement
-                    mysqli_stmt_execute($update_stmt);
+                        // Update the user's password in the users table
+                        $update_query = "UPDATE users SET password =? WHERE user_id =?";
+                        $update_stmt = mysqli_prepare($conn, $update_query);
+                        mysqli_stmt_bind_param($update_stmt, "si", $hashed_password, $user_id);
+                        mysqli_stmt_execute($update_stmt);
 
-                    // Close the statement
-                    mysqli_stmt_close($update_stmt);
+                        // Close the statements
+                        mysqli_stmt_close($insert_stmt);
+                        mysqli_stmt_close($update_stmt);
 
-                    // Redirect back to the profile page with a success message
-                    header("Location: user-profile.php?tab=loginSettings&success=Password updated successfully.");
-                    exit();
+                        // Redirect back to the profile page with a success message
+                        header("Location: user-profile.php?tab=loginSettings&success=Password updated successfully.");
+                        exit();
+                    } else {
+                        // Redirect back to the profile page with an error message
+                        header("Location: user-profile.php?tab=loginSettings&error=cannot_use_old_password");
+                        exit();
+                    }
                 } else {
                     // Redirect back to the profile page with an error message
                     header("Location: user-profile.php?tab=loginSettings&error=cannot_use_old_password");
